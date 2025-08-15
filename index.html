@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>مترجم محلي — إنجليزي ⇄ عربي (AI محلي)</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#111936; --muted:#7b88a8; --accent:#66e0a3; --danger:#ff6b6b; --text:#e8eefb;
+      --border:#1b254b; --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cairo,Arial,sans-serif;background:linear-gradient(180deg,#0b1020 0%,#0f1630 100%);color:var(--text)}
+    .container{max-width:1100px;margin:auto;padding:24px}
+    .header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin:8px 0 20px}
+    .title{font-size:clamp(20px,2.4vw,28px);font-weight:800;letter-spacing:.2px}
+    .subtitle{color:var(--muted);font-size:14px}
+    .card{background:linear-gradient(180deg,#101a39 0%,#0f1936 100%);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:18px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    textarea{width:100%;height:280px;background:#0e1430;border:1px solid var(--border);border-radius:14px;padding:14px 14px 54px;color:var(--text);font-size:15px;line-height:1.8;resize:vertical;}
+    textarea::placeholder{color:#7f8bb3}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+    .controls .right{margin-inline-start:auto;display:flex;gap:10px}
+    .btn{appearance:none;border:1px solid var(--border);background:#0e1736;color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;transition:.2s;box-shadow:0 2px 0 rgba(0,0,0,.2)}
+    .btn:hover{transform:translateY(-1px);border-color:#2a3a7a}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn.primary{background:linear-gradient(90deg,#1e9d6e,#24c389);border-color:transparent;color:#08121a}
+    .btn.ghost{background:transparent}
+    .btn.danger{background:linear-gradient(90deg,#e05252,#ff7b7b);border-color:transparent;color:#2a0e0e}
+    .swap{display:flex;align-items:center;gap:8px}
+    select, .select-like{background:#0e1736;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:12px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px dashed #2c3a74;border-radius:999px;color:#a8b3d1;font-size:12px}
+    .status{margin-top:10px;color:#a8b3d1;font-size:13px;min-height:20px}
+    .footer{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:18px}
+    .small{font-size:12px;color:#9fb0d6}
+    .badge{font-size:11px;background:#13214a;color:#9cc3ff;padding:6px 10px;border-radius:999px;border:1px solid #1c2c5d}
+    .stack{display:flex;gap:10px;flex-wrap:wrap}
+    .progress{width:100%;height:8px;background:#0e1430;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+    .bar{height:100%;width:0%;background:linear-gradient(90deg,#66e0a3,#9df0c5)}
+    .corner{position:fixed;inset-inline-end:16px;inset-block-end:16px;opacity:.9}
+    .link{color:#8be5ff;text-decoration:none}
+    .tooltip{border-bottom:1px dotted #6272a4;cursor:help}
+    .note{padding:10px 12px;background:#0f1a3a;border:1px solid #1b2a5a;border-radius:12px;color:#9fb0d6}
+  </style>
+  <!--
+  🛈 تعليمات سريعة للتشغيل محلياً بدون إنترنت بعد أول إعداد:
+  1) نزّل ملف المكتبة transformers.min.js واحفظه بجانب هذا الملف.
+     من CDN مرة واحدة ثم استخدمه محلياً (غيّر وسم <script> أدناه إلى المسار المحلي).
+  2) نزّل نماذج الترجمة التالية بصيغة safetensors/onnx المدعومة من transformers.js وضعها في مجلد models:
+     - Helsinki-NLP/opus-mt-en-ar (ترجمة EN→AR)
+     - Helsinki-NLP/opus-mt-ar-en (ترجمة AR→EN)
+     سنستخدم واجهة التحميل من مسارات محلية (local files URLs) بدل الإنترنت.
+  3) بعد أول تحميل، تُخزّن الملفات في IndexedDB ويمكن العمل أوفلاين بالكامل.
+  4) إن كان لديك WebGPU سيُستخدم تلقائياً لتسريع الأداء، وإلا فسيعمل على CPU.
+  -->
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <div class="title">مترجم محلي (AI) — إنجليزي ⇄ عربي</div>
+        <div class="subtitle">يعمل مباشرة على جهازك دون مفاتيح API. بعد أول إعداد سيعمل بلا إنترنت.</div>
+      </div>
+      <span class="badge">نسخة غير محدودة</span>
+    </div>
+
+    <div class="card">
+      <div class="stack" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="stack">
+          <label class="select-like">الاتجاه:
+            <select id="direction">
+              <option value="en-ar">إنجليزي → عربي</option>
+              <option value="ar-en">عربي → إنجليزي</option>
+            </select>
+          </label>
+          <label class="select-like">النموذج:
+            <select id="modelSelect">
+              <option value="en-ar">Helsinki-NLP/opus-mt-en-ar</option>
+              <option value="ar-en">Helsinki-NLP/opus-mt-ar-en</option>
+            </select>
+          </label>
+          <span class="pill">التسريع: <span id="accel">التحقق…</span></span>
+        </div>
+        <button class="btn ghost" id="swapBtn" title="تبديل الاتجاه">⇄ تبديل</button>
+      </div>
+
+      <div class="row">
+        <div>
+          <textarea id="src" placeholder="اكتب/الصق النص هنا بالإنجليزية أو بالعربية…"></textarea>
+          <div class="controls">
+            <button class="btn" id="pasteBtn">لصق</button>
+            <button class="btn danger" id="clearBtn">مسح</button>
+            <div class="right">
+              <button class="btn primary" id="translateBtn">ترجمة الآن</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <textarea id="tgt" placeholder="ستظهر الترجمة هنا…" readonly></textarea>
+          <div class="controls">
+            <button class="btn" id="copyBtn">نسخ الترجمة</button>
+            <button class="btn ghost" id="saveTxtBtn" title="حفظ كملف نصي">حفظ .txt</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="stack">
+          <div class="note">
+            <strong>وضع العمل:</strong> <span id="mode">تحميل النموذج…</span>
+            <span class="tooltip" title="تلميح: من الإعدادات أدناه يمكنك ربط مسار مجلد النماذج المحلي لتعمل أوفلاين.">🛈</span>
+          </div>
+          <div class="note">
+            <label>مسار المجلد المحلي للنماذج: <input id="localBase" placeholder="مثلًا: ./models/" style="width:240px;background:#0d1533;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 8px"></label>
+            <button class="btn" id="applyLocal">تطبيق</button>
+          </div>
+        </div>
+        <div style="min-width:220px">
+          <div class="small" style="margin-bottom:6px">تقدّم التحميل</div>
+          <div class="progress"><div class="bar" id="bar"></div></div>
+          <div class="small" id="progressText"></div>
+        </div>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <p class="small" style="margin-top:14px">إن ظهر بطء في أول استخدام فهذا طبيعي بسبب تحميل النماذج لأول مرة. بعد ذلك ستعمل الترجمة بسرعة.
+      يدعم WebGPU تلقائيًا إن كان متاحًا؛ وإلا يعمل على CPU.</p>
+
+  </div>
+
+  <!-- الخيار (أ): استخدام CDN أول مرة، ثم حفظ الملف محليًا واستبدال المسار -->
+  <script src="https://unpkg.com/@xenova/transformers@3.2.3"></script>
+  <script>
+  // =============== إعدادات عامة ===============
+  const els = {
+    direction: document.getElementById('direction'),
+    modelSelect: document.getElementById('modelSelect'),
+    swapBtn: document.getElementById('swapBtn'),
+    src: document.getElementById('src'),
+    tgt: document.getElementById('tgt'),
+    translateBtn: document.getElementById('translateBtn'),
+    pasteBtn: document.getElementById('pasteBtn'),
+    clearBtn: document.getElementById('clearBtn'),
+    copyBtn: document.getElementById('copyBtn'),
+    saveTxtBtn: document.getElementById('saveTxtBtn'),
+    status: document.getElementById('status'),
+    accel: document.getElementById('accel'),
+    mode: document.getElementById('mode'),
+    bar: document.getElementById('bar'),
+    progressText: document.getElementById('progressText'),
+    localBase: document.getElementById('localBase'),
+    applyLocal: document.getElementById('applyLocal'),
+  };
+
+  // تخزين المسار المحلي في LocalStorage
+  const LOCAL_KEY = 'translator_local_base';
+  els.localBase.value = localStorage.getItem(LOCAL_KEY) || '';
+
+  function setStatus(msg){ els.status.textContent = msg; }
+  function setMode(msg){ els.mode.textContent = msg; }
+  function setProgress(ratio, text){ els.bar.style.width = `${Math.max(0, Math.min(1, ratio))*100}%`; els.progressText.textContent = text || '' }
+
+  // الكشف عن WebGPU/CPU
+  (async () => {
+    let accel = 'CPU';
+    try {
+      if ('gpu' in navigator) accel = 'WebGPU';
+      else if (navigator.userAgent.toLowerCase().includes('firefox')) accel = 'WASM/Threads';
+    } catch {}
+    els.accel.textContent = accel;
+  })();
+
+  // =============== تحميل النماذج عبر transformers.js ===============
+  const { pipeline, env } = window.transformers;
+
+  // تمكين التخزين المحلي للنماذج وعدم طلب الإنترنت بعد التهيئة
+  env.allowLocalModels = true;         // السماح بالتحميل من مسارات محلية
+  env.useBrowserCache = true;          // التخزين في IndexedDB
+  env.localModelPath = null;           // نضبطه لاحقاً عند اختيار مجلد محلي
+  // لتجربة أفضل على الأجهزة الحديثة:
+  env.backends.onnx.wasm.numThreads = Math.max(2, navigator.hardwareConcurrency ? Math.floor(navigator.hardwareConcurrency/2) : 2);
+
+  // الترجمة EN→AR و AR→EN
+  const MODEL_IDS = {
+    'en-ar': 'Helsinki-NLP/opus-mt-en-ar',
+    'ar-en': 'Helsinki-NLP/opus-mt-ar-en'
+  };
+
+  // إن تم تحديد مجلد محلي، نستخدمه كأساس للمسارات
+  function applyLocalBase(){
+    const base = (els.localBase.value || '').trim();
+    if (base) {
+      // مثال: ./models/  — يجب أن يحتوي مجلد لكل نموذج بالاسم نفسه ويضم ملفات tokenizer/model
+      env.localModelPath = base.replace(/\\/g, '/');
+      localStorage.setItem(LOCAL_KEY, env.localModelPath);
+      setStatus(`تم ضبط المسار المحلي للنماذج: ${env.localModelPath}`);
+    } else {
+      env.localModelPath = null;
+      localStorage.removeItem(LOCAL_KEY);
+      setStatus('تم تعطيل المسار المحلي. سيتم استخدام التنزيل من الويب (إن متاح).');
+    }
+  }
+  els.applyLocal.addEventListener('click', applyLocalBase);
+  if (els.localBase.value) applyLocalBase();
+
+  let translator = null; // سيتم إنشاء pipeline حسب الاتجاه
+  let currentModelKey = null;
+  let busy = false;
+
+  async function ensurePipeline(dirKey){
+    if (translator && currentModelKey === dirKey) return translator;
+    setMode('تحميل النموذج…');
+    setProgress(0, '');
+
+    // اختيار المعرّف الصحيح
+    const modelId = MODEL_IDS[dirKey];
+
+    // مراقبة التحميل (hooks)
+    const progressCallback = (data) => {
+      // data: { status, loaded, total, name, file }
+      if (!data) return;
+      let ratio = 0;
+      if (data.total) ratio = data.loaded / data.total;
+      setProgress(ratio, `${data.status || 'تحميل'} — ${data.name || data.file || ''}`);
+    };
+
+    translator = await pipeline('translation', modelId, { progress_callback: progressCallback });
+    currentModelKey = dirKey;
+    setMode(`جاهز — ${modelId}${env.localModelPath ? ' (محلي)' : ' (CDN)'}`);
+    setProgress(1, 'اكتمل التحميل');
+    return translator;
+  }
+
+  async function doTranslate(){
+    if (busy) return;
+    const text = els.src.value.trim();
+    if (!text){ setStatus('اكتب نصًا للترجمة.'); return; }
+    busy = true; els.translateBtn.disabled = true; setStatus('جارِ الترجمة…');
+
+    const dirKey = els.direction.value;
+    try {
+      const pipe = await ensurePipeline(dirKey);
+      // بعض نماذج الترجمة تعمل جيدًا على دفعات — نقسم النص الطويل فقرات
+      const parts = text.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
+      const outputs = [];
+      for (const part of (parts.length ? parts : [text])){
+        const out = await pipe(part);
+        // API تعيد كائنًا أو مصفوفة كائنات [ { translation_text } ]
+        const translated = Array.isArray(out) ? out.map(o => o.translation_text).join('\n') : (out.translation_text || '');
+        outputs.push(translated);
+      }
+      els.tgt.value = outputs.join('\n\n');
+      setStatus('تمت الترجمة بنجاح.');
+    } catch (err){
+      console.error(err);
+      setStatus('حدث خطأ أثناء الترجمة: ' + (err && err.message ? err.message : err));
+    } finally {
+      busy = false; els.translateBtn.disabled = false;
+    }
+  }
+
+  // أزرار واجهة
+  els.translateBtn.addEventListener('click', doTranslate);
+  els.src.addEventListener('keydown', (e)=>{ if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='enter') doTranslate(); });
+
+  els.pasteBtn.addEventListener('click', async ()=>{
+    try{ els.src.value = await navigator.clipboard.readText(); }catch{ setStatus('لم أستطع الوصول إلى الحافظة. اسمح للأذن من المتصفح.'); }
+  });
+  els.clearBtn.addEventListener('click', ()=>{ els.src.value=''; els.tgt.value=''; setStatus(''); });
+  els.copyBtn.addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(els.tgt.value); setStatus('تم نسخ الترجمة.'); }catch{ setStatus('تعذّر النسخ للحافظة.'); }
+  });
+  els.saveTxtBtn.addEventListener('click', ()=>{
+    const blob = new Blob([els.tgt.value||''], {type:'text/plain;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'translation.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // تبديل الاتجاه بسرعة
+  function syncModelSelect(){ els.modelSelect.value = els.direction.value; }
+  els.direction.addEventListener('change', ()=>{ syncModelSelect(); setStatus('تم تغيير الاتجاه.'); });
+  els.swapBtn.addEventListener('click', ()=>{
+    els.direction.value = (els.direction.value === 'en-ar') ? 'ar-en' : 'en-ar';
+    syncModelSelect(); setStatus('تم التبديل.');
+  });
+  els.modelSelect.addEventListener('change', ()=>{
+    // ضبط الاتجاه ليتوافق مع النموذج
+    els.direction.value = els.modelSelect.value; setStatus('تم اختيار نموذج مختلف — قد يستلزم إعادة تحميل.');
+    translator = null; currentModelKey = null; // لضمان إعادة الإنشاء
+  });
+
+  // تحميل أولي
+  syncModelSelect();
+  ensurePipeline(els.direction.value).catch(console.error);
+  </script>
+</body>
+</html>
