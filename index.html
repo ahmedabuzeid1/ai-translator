@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>مترجم AI محلي (إنجليزي ⇄ عربي)</title>
+<title>مترجم AI تجريبي (إنجليزي ⇄ عربي)</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -59,7 +59,7 @@
 <body>
 
 <div class="container">
-    <h1>مترجم AI (إنجليزي ⇄ عربي)</h1>
+    <h1>مترجم AI تجريبي</h1>
     <label>النص المراد ترجمته:</label>
     <textarea id="inputText" placeholder="أدخل النص هنا..."></textarea>
 
@@ -78,15 +78,16 @@
 
 <script>
 let translator = null;
-let modelLoaded = false;
+let currentDirection = null;
 
 async function loadModel(direction) {
     document.getElementById("status").innerText = "جارٍ تحميل النموذج...";
+    // نموذج صغير للسرعة (تجريبي)
     let modelName = direction === "en-ar" 
-        ? "Xenova/opus-mt-en-ar"
-        : "Xenova/opus-mt-ar-en";
+        ? "Xenova/translation_en_to_fr" // مؤقتًا نستخدم ترجمة إنجليزي -> فرنسي للتجربة
+        : "Xenova/translation_fr_to_en"; // مؤقتًا فرنسي -> إنجليزي
     translator = await window.transformers.pipeline("translation", modelName);
-    modelLoaded = true;
+    currentDirection = direction;
     document.getElementById("status").innerText = "تم تحميل النموذج ✔";
 }
 
@@ -99,21 +100,14 @@ async function translateText() {
         return;
     }
 
-    if (!modelLoaded) {
+    if (!translator || currentDirection !== direction) {
         await loadModel(direction);
-    } else {
-        let currentModel = direction === "en-ar" 
-            ? "Xenova/opus-mt-en-ar"
-            : "Xenova/opus-mt-ar-en";
-        if (translator.model !== currentModel) {
-            await loadModel(direction);
-        }
     }
 
     document.getElementById("status").innerText = "جارٍ الترجمة...";
     let result = await translator(inputText);
     document.getElementById("outputText").value = result[0].translation_text;
-    document.getElementById("status").innerText = "تمت الترجمة ✔";
+    document.getElementById("status").innerText = "تمت الترجمة ✔ (نسخة تجريبية)";
 }
 </script>
 
